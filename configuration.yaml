@@ -1,0 +1,140 @@
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+# Uncomment this if you are using SSL/TLS, running in Docker container, etc.
+# http:
+#   base_url: example.duckdns.org:8123
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+
+
+# knx:
+#   config_file: '/includs/knx.yaml'
+# knx:
+#  tunneling:
+#   host: 'XXX.XXX.XXX.XX'
+#   port: 3671
+knx:
+ tunneling:
+   host: 'XXX.XXX.XXX.XX'
+   port: 3671
+   local_ip: 'XXX.XXX.XXX.YY'
+ 
+light: 
+  - platform: knx
+    name: Treppe-Oben
+    address: 1/2/4
+    state_address: 0/1/8
+    
+  - platform: knx
+    name: Treppe-Unten
+    address: 1/2/5
+    state_address: 0/1/9
+    
+  - platform: knx
+    name: Eingang
+    address: 1/4/0
+    state_address: 0/1/0
+    
+  - platform: knx
+    name: Hof
+    address: 1/4/1
+    state_address: 0/1/1
+    
+  - platform: knx
+    name: Werkstatt
+    address: 1/1/3
+    state_address: 0/1/2
+    
+  - platform: knx
+    name: Treppe-Lager
+    address: 1/0/4
+    state_address: 0/1/3
+    
+  - platform: knx
+    name: Durchgang
+    address: 1/1/5
+    state_address: 0/1/4
+    
+  - platform: knx
+    name: Lager
+    address: 1/0/2
+    state_address: 0/1/5
+    
+  - platform: knx
+    name: Keller
+    address: 1/0/0
+    state_address: 0/1/6
+    
+  - platform: knx
+    name: Flur-Mitte
+    address: 1/2/3
+    state_address: 0/1/7
+    
+  - platform: knx
+    name: Michael-Decke
+    address: 1/2/2
+    state_address: 0/1/10
+    
+  - platform: knx
+    name: Michael-Boden
+    address: 1/2/0
+    state_address: 0/1/11
+    
+  - platform: knx
+    name: Michael-Nachttisch
+    address: 1/2/1
+    state_address: 0/1/12
+    
+  - platform: knx
+    name: Flur-Unten
+    address: 1/1/6
+    state_address: 0/1/13
+    
+  - platform: knx
+    name: Waschküche
+    address: 1/1/1
+    state_address: 0/1/14
+
+# KNX ENDE
+  
+
+switch:    
+  - platform: rest
+    name: "LichtSockel"
+    scan_interval: 5
+    resource: http://XXX.XXX.XXX.70/relay/0
+    body_on: 'turn=on'
+    body_off: 'turn=off'
+    is_on_template: '{{ value_json.ison == true}}'
+    headers:
+      content-type: application/x-www-form-urlencoded
+    
+  - platform: mqtt
+    name: "LichtSockelMQTT"
+    state_topic: "shellies/shelly1-76A08F/relay/0"
+    command_topic: "shellies/shelly1-76A08F/relay/0/command"
+    qos: 2
+    payload_on: "on"
+    payload_off: "off"
+    retain: false
+    optimistic : false
+    
+  - platform: mqtt
+    schema: template
+    name: ShellyDimmer
+    state_topic: "shellies/shellydimmer-F3C274/light/0/status"
+    state_template: '{% if value_json.ison %} on {% else %} off {% endif %}'
+    command_topic: "shellies/shellydimmer-F3C274/light/0/set"
+    command_on_template: '{"turn": "on"{% if brightness is defined %}, "brightness": {{(brightness | float * 0.3882 + 1) | round(0)}}{% endif %}}'
+    command_off_template: '{"turn": "off"}'
+    brightness_template: '{{ (value_json.brightness | float * 2.55) | round(0) }}'
+
